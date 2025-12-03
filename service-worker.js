@@ -1,10 +1,7 @@
-const CACHE_NAME = 'esp32-led-v2';
+const CACHE_NAME = 'esp32-led-v3';
 const urlsToCache = [
   './index.html',
-  './manifest.json',
-  'https://cdn.tailwindcss.com?plugins=forms,container-queries',
-  'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap',
-  'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap'
+  './manifest.json'
 ];
 
 self.addEventListener('install', event => {
