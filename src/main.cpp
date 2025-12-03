@@ -27,10 +27,11 @@ const int PWM_RESOLUTION = 8;
 bool ledsOn = false;
 int currentMode = 0; // 0 = manual, 1 = onda quadrada, 2 = onda senoidal
 bool pwmAttached = false;
+int currentOutputValue = 0; // Valor atual da saída (0-255) para envio ao app
 
 // Parâmetros das ondas
-const int SQUARE_WAVE_PERIOD = 1000; // 1 segundo
-const float SINE_WAVE_FREQ = 1.0; // 1 Hz
+int squareWavePeriod = 1000; // 1 segundo (ajustável)
+float sineWaveFreq = 1.0; // 1 Hz (ajustável)
 
 // Callbacks do Servidor BLE
 class MyServerCallbacks: public BLEServerCallbacks {
@@ -47,7 +48,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
 };
 
 // Funções de controle (declaração antecipada)
-void processCommand(char command);
+void processCommand(std::string command);
 
 // Callbacks da Característica (Recebimento de dados)
 class MyCallbacks: public BLECharacteristicCallbacks {
@@ -60,8 +61,8 @@ class MyCallbacks: public BLECharacteristicCallbacks {
           Serial.print(rxValue[i]);
         Serial.println();
 
-        // Processa o primeiro caractere recebido
-        processCommand(rxValue[0]);
+        // Processa o comando completo
+        processCommand(rxValue);
       }
     }
 };
@@ -85,30 +86,53 @@ void disablePWM() {
 void handleManualMode() {
   disablePWM();
   digitalWrite(OUTPUT_PIN, ledsOn ? HIGH : LOW);
+  currentOutputValue = ledsOn ? 255 : 0;
 }
 
 void handleSquareWave() {
   disablePWM();
   unsigned long currentTime = millis();
-  int period = currentTime % SQUARE_WAVE_PERIOD;
+  int period = currentTime % squareWavePeriod;
   
-  if (period < SQUARE_WAVE_PERIOD / 2) {
+  if (period < squareWavePeriod / 2) {
     digitalWrite(OUTPUT_PIN, HIGH);
+    currentOutputValue = 255;
   } else {
     digitalWrite(OUTPUT_PIN, LOW);
+    currentOutputValue = 0;
   }
 }
 
 void handleSineWave() {
   enablePWM();
   unsigned long currentTime = millis();
-  float angle = (currentTime / 1000.0) * SINE_WAVE_FREQ * 2 * PI;
+  float angle = (currentTime / 1000.0) * sineWaveFreq * 2 * PI;
   int pwmValue = (int)((sin(angle) + 1) * 127.5);
   ledcWrite(PWM_CHANNEL, pwmValue);
+  currentOutputValue = pwmValue;
 }
 
-void processCommand(char command) {
-  switch (command) {
+void processCommand(std::string command) {
+  if (command.length() == 0) return;
+
+  char cmdChar = command[0];
+
+  // Comando de Frequência: F1.5
+  if (cmdChar == 'F') {
+    if (command.length() > 1) {
+      std::string valStr = command.substr(1);
+      float freq = atof(valStr.c_str());
+      if (freq > 0) {
+        sineWaveFreq = freq;
+        squareWavePeriod = (int)(1000.0 / freq);
+        Serial.print("Frequencia ajustada: ");
+        Serial.println(freq);
+      }
+    }
+    return;
+  }
+
+  switch (cmdChar) {
     case '1':
       currentMode = 0;
       ledsOn = !ledsOn;
@@ -193,6 +217,16 @@ void loop() {
       case 2: Serial.print("Onda Senoidal"); break;
     }
     Serial.println();
+  }
+
+  // Envio de dados em tempo real para o app (aprox. 20Hz = a cada 50ms)
+  static unsigned long lastNotifyTime = 0;
+  if (deviceConnected && (millis() - lastNotifyTime > 50)) {
+    lastNotifyTime = millis();
+    // Formato: "V:128"
+    std::string valStr = "V:" + std::to_string(currentOutputValue);
+    pCharacteristic->setValue(valStr);
+    pCharacteristic->notify();
   }
   
   delay(5);

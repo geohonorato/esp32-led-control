@@ -84,6 +84,12 @@
                     <span class="truncate">Onda Senoidal</span>
                 </button>
             </div>
+            
+            <div class="px-4 py-2">
+                <label for="freqSlider" class="mb-2 block text-sm font-medium text-[#333333] dark:text-white">Frequência: <span id="freqValue">1.0</span> Hz</label>
+                <input id="freqSlider" type="range" min="0.1" max="5.0" step="0.1" value="1.0" class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 dark:bg-gray-700" oninput="updateFrequency(this.value)" disabled>
+            </div>
+
             <div class="p-4 pt-2">
                 <p class="px-4 pb-3 pt-1 text-center text-sm font-normal leading-normal text-[#616189] dark:text-gray-400">Conecte-se ao dispositivo para habilitar os controles.</p>
             </div>
@@ -132,6 +138,7 @@
         let characteristic;
         let isManualOn = false;
         let currentMode = -1; // -1=none, 0=manual, 1=square, 2=sine
+        let dataBuffer = new Array(300).fill(128); // Buffer para dados reais
 
         function resizeCanvas() {
             const parent = canvas.parentElement;
@@ -153,38 +160,33 @@
             const width = canvas.width;
             const height = canvas.height;
             const centerY = height / 2;
-            const amplitude = height * 0.35;
             
-            // Velocidade da animação
-            time += 3; 
-
-            for (let x = 0; x < width; x++) {
-                let y = centerY;
+            // Se desconectado, desenha linha reta com ruído
+            if (!bluetoothDevice || !bluetoothDevice.gatt.connected) {
+                 time += 3;
+                 for (let x = 0; x < width; x++) {
+                    let y = centerY + (Math.random() - 0.5) * 2;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                 }
+            } else {
+                // Desenha dados reais do buffer
+                // Mapeia o buffer (0-255) para a altura do canvas
+                // O buffer tem 300 pontos, esticamos para a largura do canvas
+                const step = width / dataBuffer.length;
                 
-                // Simulação baseada no modo atual
-                if (currentMode === 2) { // Senoidal
-                    const freq = 0.03;
-                    y = centerY + Math.sin((x - time) * freq) * amplitude;
-                } 
-                else if (currentMode === 1) { // Quadrada
-                    const freq = 0.03;
-                    // Simula onda quadrada
-                    y = Math.sin((x - time) * freq) > 0 ? centerY - amplitude : centerY + amplitude;
-                } 
-                else if (currentMode === 0) { // Manual
-                     // Nível DC (Alto ou Baixo)
-                     const targetY = isManualOn ? centerY - amplitude : centerY + amplitude;
-                     y = targetY;
-                     // Adiciona um pequeno ruído para parecer real
-                     y += (Math.random() - 0.5) * 1.5;
-                } 
-                else {
-                    // Desconectado (Linha reta no centro com ruído mínimo)
-                    y = centerY + (Math.random() - 0.5) * 1;
+                for (let i = 0; i < dataBuffer.length; i++) {
+                    const val = dataBuffer[i];
+                    // Inverte Y porque canvas 0 é topo
+                    // 0 -> height (baixo), 255 -> 0 (topo)
+                    // Vamos usar margem de 10%
+                    const y = height - (val / 255.0) * (height * 0.8) - (height * 0.1);
+                    
+                    const x = i * step;
+                    
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
                 }
-
-                if (x === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
             }
             
             ctx.stroke();
@@ -221,6 +223,10 @@
                 updateStatus('Conectado', 'connected');
                 enableButtons();
                 
+                // Habilita notificações
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+                
                 bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
 
             } catch (error) {
@@ -234,6 +240,24 @@
             disableButtons();
             currentMode = -1;
             updateModeVisuals();
+            // Limpa buffer
+            dataBuffer.fill(128);
+        }
+
+        function handleNotifications(event) {
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const str = decoder.decode(value);
+            
+            // Esperado: "V:128"
+            if (str.startsWith('V:')) {
+                const val = parseInt(str.substring(2));
+                if (!isNaN(val)) {
+                    // Adiciona ao buffer e remove o mais antigo
+                    dataBuffer.push(val);
+                    dataBuffer.shift();
+                }
+            }
         }
 
         async function sendCommand(command) {
@@ -252,18 +276,48 @@
             isManualOn = !isManualOn;
             currentMode = 0;
             updateModeVisuals();
+            
+            // Atualiza cor do botão Manual
+            const btn = document.getElementById('btnManual');
+            if (isManualOn) {
+                btn.classList.remove('bg-white', 'text-gray-900');
+                btn.classList.add('bg-blue-600', 'text-white');
+            } else {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-900');
+            }
         }
 
         async function setSquareWave() {
             await sendCommand('2');
             currentMode = 1;
             updateModeVisuals();
+            resetManualButton();
         }
 
         async function setSineWave() {
             await sendCommand('3');
             currentMode = 2;
             updateModeVisuals();
+            resetManualButton();
+        }
+        
+        function resetManualButton() {
+            isManualOn = false;
+            const btn = document.getElementById('btnManual');
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-white', 'text-gray-900');
+        }
+
+        let freqTimeout;
+        function updateFrequency(val) {
+            document.getElementById('freqValue').textContent = val;
+            
+            // Debounce para não enviar comandos demais
+            clearTimeout(freqTimeout);
+            freqTimeout = setTimeout(async () => {
+                await sendCommand('F' + val);
+            }, 200);
         }
 
         function updateStatus(text, state) {
@@ -297,6 +351,11 @@
                 btn.classList.add('cursor-pointer', 'bg-white', 'text-gray-900', 'hover:bg-gray-50', 'shadow-sm');
             });
             
+            const slider = document.getElementById('freqSlider');
+            slider.disabled = false;
+            slider.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+            slider.classList.add('bg-blue-200', 'dark:bg-blue-900');
+            
             const btnConnect = document.getElementById('btnConnect');
             btnConnect.innerHTML = '<span class="material-symbols-outlined">check</span><span class="truncate">Conectado</span>';
             btnConnect.classList.remove('bg-primary');
@@ -309,8 +368,13 @@
                 const btn = document.getElementById(id);
                 btn.disabled = true;
                 btn.classList.add('cursor-not-allowed', 'bg-gray-200', 'text-gray-400', 'dark:bg-white/5', 'dark:text-gray-500');
-                btn.classList.remove('cursor-pointer', 'bg-white', 'text-gray-900', 'hover:bg-gray-50', 'bg-primary', 'text-white', 'shadow-sm');
+                btn.classList.remove('cursor-pointer', 'bg-white', 'text-gray-900', 'hover:bg-gray-50', 'shadow-sm', 'bg-blue-600', 'text-white');
             });
+            
+            const slider = document.getElementById('freqSlider');
+            slider.disabled = true;
+            slider.classList.add('bg-gray-200', 'dark:bg-gray-700');
+            slider.classList.remove('bg-blue-200', 'dark:bg-blue-900');
             
             const btnConnect = document.getElementById('btnConnect');
             btnConnect.innerHTML = '<span class="material-symbols-outlined">bluetooth_drive</span><span class="truncate">Conectar Bluetooth</span>';
@@ -319,22 +383,8 @@
         }
 
         function updateModeVisuals() {
-            const buttons = [
-                {id: 'btnManual', mode: 0},
-                {id: 'btnSquare', mode: 1},
-                {id: 'btnSine', mode: 2}
-            ];
-
-            buttons.forEach(item => {
-                const btn = document.getElementById(item.id);
-                if (currentMode === item.mode) {
-                    btn.classList.remove('bg-white', 'text-gray-900', 'hover:bg-gray-50');
-                    btn.classList.add('bg-primary', 'text-white');
-                } else {
-                    btn.classList.add('bg-white', 'text-gray-900', 'hover:bg-gray-50');
-                    btn.classList.remove('bg-primary', 'text-white');
-                }
-            });
+            // Removido para não conflitar com a lógica específica do botão Manual
+            // A lógica de visualização agora é tratada individualmente em cada função de modo
         }
     </script>
 </body>
