@@ -1,7 +1,7 @@
 {
     "name": "ESP32 LED Controller",
     "short_name": "ESP32 LEDs",
-    "start_url": "./web_interface.html",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#101022",
     "theme_color": "#1313ec",

@@ -1,6 +1,6 @@
 const CACHE_NAME = 'esp32-led-v1';
 const urlsToCache = [
-  './web_interface.html',
+  './index.html',
   './manifest.json',
   'https://cdn.tailwindcss.com?plugins=forms,container-queries',
   'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap',
