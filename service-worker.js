@@ -1,4 +1,4 @@
-const CACHE_NAME = 'esp32-led-v1';
+const CACHE_NAME = 'esp32-led-v2';
 const urlsToCache = [
   './index.html',
   './manifest.json',
