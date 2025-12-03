@@ -276,39 +276,20 @@
             isManualOn = !isManualOn;
             currentMode = 0;
             updateModeVisuals();
-            
-            // Atualiza cor do botão Manual
-            const btn = document.getElementById('btnManual');
-            if (isManualOn) {
-                btn.classList.remove('bg-white', 'text-gray-900');
-                btn.classList.add('bg-blue-600', 'text-white');
-            } else {
-                btn.classList.remove('bg-blue-600', 'text-white');
-                btn.classList.add('bg-white', 'text-gray-900');
-            }
         }
 
         async function setSquareWave() {
             await sendCommand('2');
             currentMode = 1;
             updateModeVisuals();
-            resetManualButton();
         }
 
         async function setSineWave() {
             await sendCommand('3');
             currentMode = 2;
             updateModeVisuals();
-            resetManualButton();
         }
         
-        function resetManualButton() {
-            isManualOn = false;
-            const btn = document.getElementById('btnManual');
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('bg-white', 'text-gray-900');
-        }
-
         let freqTimeout;
         function updateFrequency(val) {
             document.getElementById('freqValue').textContent = val;
@@ -383,8 +364,31 @@
         }
 
         function updateModeVisuals() {
-            // Removido para não conflitar com a lógica específica do botão Manual
-            // A lógica de visualização agora é tratada individualmente em cada função de modo
+            // Reseta todos os botões para o estado padrão (Cinza/Branco)
+            const buttons = ['btnManual', 'btnSquare', 'btnSine'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-900');
+            });
+
+            // Aplica estilo ativo baseado no modo atual
+            if (currentMode === 1) { // Onda Quadrada
+                const btn = document.getElementById('btnSquare');
+                btn.classList.remove('bg-white', 'text-gray-900');
+                btn.classList.add('bg-blue-600', 'text-white');
+            } else if (currentMode === 2) { // Onda Senoidal
+                const btn = document.getElementById('btnSine');
+                btn.classList.remove('bg-white', 'text-gray-900');
+                btn.classList.add('bg-blue-600', 'text-white');
+            } else if (currentMode === 0) { // Manual
+                // No modo manual, só fica azul se estiver ligado (isManualOn)
+                if (isManualOn) {
+                    const btn = document.getElementById('btnManual');
+                    btn.classList.remove('bg-white', 'text-gray-900');
+                    btn.classList.add('bg-blue-600', 'text-white');
+                }
+            }
         }
     </script>
 </body>
