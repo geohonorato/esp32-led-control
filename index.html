@@ -329,7 +329,7 @@
                 const btn = document.getElementById(id);
                 btn.disabled = false;
                 btn.classList.remove('cursor-not-allowed', 'bg-gray-200', 'text-gray-400', 'dark:bg-white/5', 'dark:text-gray-500');
-                btn.classList.add('cursor-pointer', 'bg-white', 'text-gray-900', 'hover:bg-gray-50', 'shadow-sm');
+                btn.classList.add('cursor-pointer', 'bg-white', 'text-gray-900', 'shadow-sm');
             });
             
             const slider = document.getElementById('freqSlider');
@@ -349,7 +349,7 @@
                 const btn = document.getElementById(id);
                 btn.disabled = true;
                 btn.classList.add('cursor-not-allowed', 'bg-gray-200', 'text-gray-400', 'dark:bg-white/5', 'dark:text-gray-500');
-                btn.classList.remove('cursor-pointer', 'bg-white', 'text-gray-900', 'hover:bg-gray-50', 'shadow-sm', 'bg-blue-600', 'text-white');
+                btn.classList.remove('cursor-pointer', 'bg-white', 'text-gray-900', 'shadow-sm', 'bg-blue-600', 'text-white');
             });
             
             const slider = document.getElementById('freqSlider');
@@ -369,16 +369,16 @@
             buttons.forEach(id => {
                 const btn = document.getElementById(id);
                 // Remove estilos ativos
-                btn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+                btn.classList.remove('bg-blue-600', 'text-white');
                 // Adiciona estilos inativos (padrão)
-                btn.classList.add('bg-white', 'text-gray-900', 'hover:bg-gray-50');
+                btn.classList.add('bg-white', 'text-gray-900');
             });
 
             // Função auxiliar para ativar botão
             const activateBtn = (id) => {
                 const btn = document.getElementById(id);
-                btn.classList.remove('bg-white', 'text-gray-900', 'hover:bg-gray-50');
-                btn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+                btn.classList.remove('bg-white', 'text-gray-900');
+                btn.classList.add('bg-blue-600', 'text-white');
             };
 
             // Aplica estilo ativo baseado no modo atual
