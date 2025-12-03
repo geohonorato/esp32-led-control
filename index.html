@@ -368,25 +368,28 @@
             const buttons = ['btnManual', 'btnSquare', 'btnSine'];
             buttons.forEach(id => {
                 const btn = document.getElementById(id);
-                btn.classList.remove('bg-blue-600', 'text-white');
-                btn.classList.add('bg-white', 'text-gray-900');
+                // Remove estilos ativos
+                btn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+                // Adiciona estilos inativos (padrão)
+                btn.classList.add('bg-white', 'text-gray-900', 'hover:bg-gray-50');
             });
+
+            // Função auxiliar para ativar botão
+            const activateBtn = (id) => {
+                const btn = document.getElementById(id);
+                btn.classList.remove('bg-white', 'text-gray-900', 'hover:bg-gray-50');
+                btn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+            };
 
             // Aplica estilo ativo baseado no modo atual
             if (currentMode === 1) { // Onda Quadrada
-                const btn = document.getElementById('btnSquare');
-                btn.classList.remove('bg-white', 'text-gray-900');
-                btn.classList.add('bg-blue-600', 'text-white');
+                activateBtn('btnSquare');
             } else if (currentMode === 2) { // Onda Senoidal
-                const btn = document.getElementById('btnSine');
-                btn.classList.remove('bg-white', 'text-gray-900');
-                btn.classList.add('bg-blue-600', 'text-white');
+                activateBtn('btnSine');
             } else if (currentMode === 0) { // Manual
                 // No modo manual, só fica azul se estiver ligado (isManualOn)
                 if (isManualOn) {
-                    const btn = document.getElementById('btnManual');
-                    btn.classList.remove('bg-white', 'text-gray-900');
-                    btn.classList.add('bg-blue-600', 'text-white');
+                    activateBtn('btnManual');
                 }
             }
         }
