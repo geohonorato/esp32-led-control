@@ -127,6 +127,12 @@
         const ctx = canvas.getContext('2d');
         let time = 0;
 
+        // Variáveis Globais
+        let bluetoothDevice;
+        let characteristic;
+        let isManualOn = false;
+        let currentMode = -1; // -1=none, 0=manual, 1=square, 2=sine
+
         function resizeCanvas() {
             const parent = canvas.parentElement;
             canvas.width = parent.clientWidth;
@@ -198,11 +204,6 @@
                     .catch(err => console.log('Erro ao registrar SW:', err));
             });
         }
-
-        let bluetoothDevice;
-        let characteristic;
-        let isManualOn = false;
-        let currentMode = -1; // -1=none, 0=manual, 1=square, 2=sine
 
         async function connectBluetooth() {
             try {

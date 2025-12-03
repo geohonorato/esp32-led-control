@@ -42,8 +42,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
       Serial.println("Dispositivo desconectado!");
-      // Reinicia advertising para permitir nova conexão
-      pServer->getAdvertising()->start();
+      // O reinício do advertising será tratado no loop principal para maior estabilidade
     }
 };
 
@@ -155,9 +154,9 @@ void setup() {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06); 
-  pAdvertising->setMinPreferred(0x12);
-  BLEDevice::startAdvertising();
+  pAdvertising->setMinPreferred(0x06);  // Ajuda com conexões iPhone
+  pAdvertising->setMaxPreferred(0x12);
+  pAdvertising->start();
   
   Serial.println("BLE Iniciado! Aguardando conexão...");
 }
@@ -179,6 +178,21 @@ void loop() {
   }
   if (deviceConnected && !oldDeviceConnected) {
       oldDeviceConnected = deviceConnected;
+  }
+  
+  // Status periódico no Serial (Heartbeat)
+  static unsigned long lastStatusTime = 0;
+  if (millis() - lastStatusTime > 2000) {
+    lastStatusTime = millis();
+    Serial.print("Status: ");
+    Serial.print(deviceConnected ? "Conectado | " : "Desconectado | ");
+    Serial.print("Modo: ");
+    switch(currentMode) {
+      case 0: Serial.print("Manual ("); Serial.print(ledsOn ? "ON" : "OFF"); Serial.print(")"); break;
+      case 1: Serial.print("Onda Quadrada"); break;
+      case 2: Serial.print("Onda Senoidal"); break;
+    }
+    Serial.println();
   }
   
   delay(5);
