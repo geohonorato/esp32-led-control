@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>ESP32 LED Control with Oscilloscope</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1313ec">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#1313ec",
+                "background-light": "#f6f6f8",
+                "background-dark": "#101022",
+              },
+              fontFamily: {
+                "display": ["Space Grotesk"]
+              },
+              borderRadius: {
+                "DEFAULT": "0.5rem",
+                "lg": "1rem",
+                "xl": "1.5rem",
+                "full": "9999px"
+              },
+            },
+          },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+          min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="font-display">
+    <div class="relative flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-b from-[#89CFF0] to-[#C3B1E1] p-4 group/design-root">
+        <div class="flex w-full max-w-md flex-col rounded-xl bg-background-light shadow-lg dark:bg-background-dark">
+            <div class="flex flex-col items-center p-6 pb-4">
+                <h1 class="text-2xl font-bold text-[#333333] dark:text-white">Controle de LEDs</h1>
+                <h2 class="text-sm font-normal text-gray-500 dark:text-gray-400">ESP32 Bluetooth</h2>
+            </div>
+            <div class="px-4 pb-4">
+                <div class="flex items-center justify-between gap-4 rounded-lg bg-gray-100 p-4 dark:bg-black/20">
+                    <div class="flex items-center gap-4">
+                        <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gray-200 text-[#333333] dark:bg-black/30 dark:text-white">
+                            <span id="statusIcon" class="material-symbols-outlined text-2xl">bluetooth_disabled</span>
+                        </div>
+                        <p id="statusText" class="flex-1 truncate text-base font-medium text-[#333333] dark:text-white">Status: Desconectado</p>
+                    </div>
+                    <div class="shrink-0">
+                        <div class="flex size-7 items-center justify-center">
+                            <div id="connectionIndicator" class="size-3 rounded-full bg-[#FF3B30]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col gap-3 px-4 py-3">
+                <button id="btnConnect" onclick="connectBluetooth()" class="flex h-14 min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-5 text-base font-bold leading-normal tracking-[0.015em] text-white transition-opacity active:opacity-80">
+                    <span class="material-symbols-outlined">bluetooth_drive</span>
+                    <span class="truncate">Conectar Bluetooth</span>
+                </button>
+                
+                <button id="btnManual" onclick="toggleManual()" class="flex h-14 min-w-[84px] cursor-not-allowed items-center justify-center gap-2 overflow-hidden rounded-xl bg-gray-200 px-5 text-base font-bold leading-normal tracking-[0.015em] text-gray-400 dark:bg-white/5 dark:text-gray-500 transition-all" disabled>
+                    <span class="material-symbols-outlined">lightbulb</span>
+                    <span class="truncate">Ligar/Desligar LED</span>
+                </button>
+                
+                <button id="btnSquare" onclick="setSquareWave()" class="flex h-14 min-w-[84px] cursor-not-allowed items-center justify-center gap-2 overflow-hidden rounded-xl bg-gray-200 px-5 text-base font-bold leading-normal tracking-[0.015em] text-gray-400 dark:bg-white/5 dark:text-gray-500 transition-all" disabled>
+                    <span class="material-symbols-outlined">square</span>
+                    <span class="truncate">Onda Quadrada</span>
+                </button>
+                
+                <button id="btnSine" onclick="setSineWave()" class="flex h-14 min-w-[84px] cursor-not-allowed items-center justify-center gap-2 overflow-hidden rounded-xl bg-gray-200 px-5 text-base font-bold leading-normal tracking-[0.015em] text-gray-400 dark:bg-white/5 dark:text-gray-500 transition-all" disabled>
+                    <span class="material-symbols-outlined">show_chart</span>
+                    <span class="truncate">Onda Senoidal</span>
+                </button>
+            </div>
+            <div class="p-4 pt-2">
+                <p class="px-4 pb-3 pt-1 text-center text-sm font-normal leading-normal text-[#616189] dark:text-gray-400">Conecte-se ao dispositivo para habilitar os controles.</p>
+            </div>
+        </div>
+        
+        <div class="mt-4 w-full max-w-md rounded-xl bg-gray-900/80 p-4 shadow-lg backdrop-blur-sm dark:bg-black/50">
+            <div class="mb-2 flex items-center justify-between">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Osciloscópio (Simulação)</h3>
+                <span class="material-symbols-outlined text-xl text-teal-400">monitoring</span>
+            </div>
+            <div class="relative h-40 w-full overflow-hidden rounded-lg bg-black">
+                <div class="absolute inset-0 grid grid-cols-8 grid-rows-6">
+                    <div class="col-span-1 border-r border-teal-500/10"></div>
+                    <div class="col-span-1 border-r border-teal-500/10"></div>
+                    <div class="col-span-1 border-r border-teal-500/10"></div>
+                    <div class="col-span-1 border-r border-teal-500/20"></div>
+                    <div class="col-span-1 border-r border-teal-500/10"></div>
+                    <div class="col-span-1 border-r border-teal-500/10"></div>
+                    <div class="col-span-1 border-r border-teal-500/10"></div>
+                    <div class="col-span-1"></div>
+                    <div class="row-span-1 border-b border-teal-500/10"></div>
+                    <div class="row-span-1 border-b border-teal-500/10"></div>
+                    <div class="row-span-1 border-b border-teal-500/20"></div>
+                    <div class="row-span-1 border-b border-teal-500/10"></div>
+                    <div class="row-span-1 border-b border-teal-500/10"></div>
+                    <div class="row-span-1"></div>
+                </div>
+                <svg class="absolute inset-0 h-full w-full" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+                    <path id="scopePath" class="text-teal-400" d="M0 50 L 300 50" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </div>
+            <div class="mt-3 flex justify-between text-xs text-gray-400">
+                <span>-100ms</span>
+                <span>0ms</span>
+                <span>+100ms</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Registra o Service Worker para funcionar como PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker registrado!', reg))
+                    .catch(err => console.log('Erro ao registrar SW:', err));
+            });
+        }
+
+        let bluetoothDevice;
+        let characteristic;
+        let isManualOn = false;
+        let currentMode = -1; // -1=none, 0=manual, 1=square, 2=sine
+
+        async function connectBluetooth() {
+            try {
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'ESP32_LED_Control' }],
+                    optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
+                });
+
+                updateStatus('Conectando...', 'connecting');
+
+                const server = await bluetoothDevice.gatt.connect();
+                const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+                characteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+
+                updateStatus('Conectado', 'connected');
+                enableButtons();
+                
+                bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
+            } catch (error) {
+                console.error('Erro:', error);
+                updateStatus('Erro na conexão', 'error');
+            }
+        }
+
+        function onDisconnected() {
+            updateStatus('Desconectado', 'disconnected');
+            disableButtons();
+            currentMode = -1;
+            updateModeVisuals();
+        }
+
+        async function sendCommand(command) {
+            if (characteristic) {
+                try {
+                    const encoder = new TextEncoder();
+                    await characteristic.writeValue(encoder.encode(command));
+                } catch (error) {
+                    console.error('Erro envio:', error);
+                }
+            }
+        }
+
+        async function toggleManual() {
+            await sendCommand('1');
+            isManualOn = !isManualOn;
+            currentMode = 0;
+            updateModeVisuals();
+            updateScope('manual');
+        }
+
+        async function setSquareWave() {
+            await sendCommand('2');
+            currentMode = 1;
+            updateModeVisuals();
+            updateScope('square');
+        }
+
+        async function setSineWave() {
+            await sendCommand('3');
+            currentMode = 2;
+            updateModeVisuals();
+            updateScope('sine');
+        }
+
+        function updateStatus(text, state) {
+            const statusText = document.getElementById('statusText');
+            const indicator = document.getElementById('connectionIndicator');
+            const icon = document.getElementById('statusIcon');
+            
+            statusText.textContent = 'Status: ' + text;
+            
+            // Reset classes
+            indicator.className = 'size-3 rounded-full';
+            
+            if (state === 'connected') {
+                indicator.classList.add('bg-[#34C759]'); // Green
+                icon.textContent = 'bluetooth_connected';
+            } else if (state === 'connecting') {
+                indicator.classList.add('bg-yellow-400');
+                icon.textContent = 'bluetooth_searching';
+            } else {
+                indicator.classList.add('bg-[#FF3B30]'); // Red
+                icon.textContent = 'bluetooth_disabled';
+            }
+        }
+
+        function enableButtons() {
+            const buttons = ['btnManual', 'btnSquare', 'btnSine'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                btn.disabled = false;
+                btn.classList.remove('cursor-not-allowed', 'bg-gray-200', 'text-gray-400', 'dark:bg-white/5', 'dark:text-gray-500');
+                btn.classList.add('cursor-pointer', 'bg-white', 'text-gray-900', 'hover:bg-gray-50', 'shadow-sm');
+            });
+            
+            const btnConnect = document.getElementById('btnConnect');
+            btnConnect.innerHTML = '<span class="material-symbols-outlined">check</span><span class="truncate">Conectado</span>';
+            btnConnect.classList.remove('bg-primary');
+            btnConnect.classList.add('bg-green-600');
+        }
+
+        function disableButtons() {
+            const buttons = ['btnManual', 'btnSquare', 'btnSine'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                btn.disabled = true;
+                btn.classList.add('cursor-not-allowed', 'bg-gray-200', 'text-gray-400', 'dark:bg-white/5', 'dark:text-gray-500');
+                btn.classList.remove('cursor-pointer', 'bg-white', 'text-gray-900', 'hover:bg-gray-50', 'bg-primary', 'text-white', 'shadow-sm');
+            });
+            
+            const btnConnect = document.getElementById('btnConnect');
+            btnConnect.innerHTML = '<span class="material-symbols-outlined">bluetooth_drive</span><span class="truncate">Conectar Bluetooth</span>';
+            btnConnect.classList.add('bg-primary');
+            btnConnect.classList.remove('bg-green-600');
+        }
+
+        function updateModeVisuals() {
+            const buttons = [
+                {id: 'btnManual', mode: 0},
+                {id: 'btnSquare', mode: 1},
+                {id: 'btnSine', mode: 2}
+            ];
+
+            buttons.forEach(item => {
+                const btn = document.getElementById(item.id);
+                if (currentMode === item.mode) {
+                    btn.classList.remove('bg-white', 'text-gray-900', 'hover:bg-gray-50');
+                    btn.classList.add('bg-primary', 'text-white');
+                } else {
+                    btn.classList.add('bg-white', 'text-gray-900', 'hover:bg-gray-50');
+                    btn.classList.remove('bg-primary', 'text-white');
+                }
+            });
+        }
+
+        function updateScope(type) {
+            const path = document.getElementById('scopePath');
+            if (type === 'manual') {
+                path.setAttribute('d', isManualOn ? "M0 10 L 300 10" : "M0 90 L 300 90");
+            } else if (type === 'square') {
+                path.setAttribute('d', "M0 90 L 50 90 L 50 10 L 150 10 L 150 90 L 250 90 L 250 10 L 300 10");
+            } else if (type === 'sine') {
+                path.setAttribute('d', "M0 50 C 37.5 10, 62.5 10, 100 50 S 137.5 90, 175 50 S 212.5 10, 250 50 S 275 90, 300 50");
+            }
+        }
+    </script>
+</body>
+</html>
