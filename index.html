@@ -1,35 +1,29 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html class="light" lang="pt-BR">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ESP32 LED Control with Oscilloscope</title>
+    <title>ESP32 - Controle de 3 LEDs BLE</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1313ec">
+    <meta name="theme-color" content="#4f46e5">
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script>
         tailwind.config = {
           darkMode: "class",
           theme: {
             extend: {
               colors: {
-                "primary": "#1313ec",
-                "background-light": "#f6f6f8",
-                "background-dark": "#101022",
+                "primary": "#4f46e5",
+                "background-light": "#f8fafc",
+                "background-dark": "#0f172a",
               },
               fontFamily: {
-                "display": ["Space Grotesk"]
-              },
-              borderRadius: {
-                "DEFAULT": "0.5rem",
-                "lg": "1rem",
-                "xl": "1.5rem",
-                "full": "9999px"
-              },
-            },
-          },
+                "display": ["Space Grotesk", "sans-serif"]
+              }
+            }
+          }
         }
     </script>
     <style>
@@ -37,361 +31,385 @@
           font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
         body {
-          min-height: max(884px, 100dvh);
+          min-height: 100dvh;
         }
     </style>
 </head>
-<body class="font-display">
-    <div class="relative flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-b from-[#89CFF0] to-[#C3B1E1] p-4 group/design-root">
-        <div class="flex w-full max-w-md flex-col rounded-xl bg-background-light shadow-lg dark:bg-background-dark">
-            <div class="flex flex-col items-center p-6 pb-4">
-                <h1 class="text-2xl font-bold text-[#333333] dark:text-white">Controle de LEDs</h1>
-                <h2 class="text-sm font-normal text-gray-500 dark:text-gray-400">ESP32 Bluetooth</h2>
-            </div>
-            <div class="px-4 pb-4">
-                <div class="flex items-center justify-between gap-4 rounded-lg bg-gray-100 p-4 dark:bg-black/20">
-                    <div class="flex items-center gap-4">
-                        <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gray-200 text-[#333333] dark:bg-black/30 dark:text-white">
-                            <span id="statusIcon" class="material-symbols-outlined text-2xl">bluetooth_disabled</span>
-                        </div>
-                        <p id="statusText" class="flex-1 truncate text-base font-medium text-[#333333] dark:text-white">Status: Desconectado</p>
-                    </div>
-                    <div class="shrink-0">
-                        <div class="flex size-7 items-center justify-center">
-                            <div id="connectionIndicator" class="size-3 rounded-full bg-[#FF3B30]"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex flex-col gap-3 px-4 py-3">
-                <button id="btnConnect" onclick="connectBluetooth()" class="flex h-14 min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-5 text-base font-bold leading-normal tracking-[0.015em] text-white transition-opacity active:opacity-80">
-                    <span class="material-symbols-outlined">bluetooth_drive</span>
-                    <span class="truncate">Conectar Bluetooth</span>
-                </button>
-                
-                <button id="btnManual" onclick="toggleManual()" class="flex h-14 min-w-[84px] cursor-not-allowed items-center justify-center gap-2 overflow-hidden rounded-xl bg-gray-200 px-5 text-base font-bold leading-normal tracking-[0.015em] text-gray-400 dark:bg-white/5 dark:text-gray-500 transition-all" disabled>
-                    <span class="material-symbols-outlined">lightbulb</span>
-                    <span class="truncate">Ligar/Desligar LED</span>
-                </button>
-                
-                <button id="btnSquare" onclick="setSquareWave()" class="flex h-14 min-w-[84px] cursor-not-allowed items-center justify-center gap-2 overflow-hidden rounded-xl bg-gray-200 px-5 text-base font-bold leading-normal tracking-[0.015em] text-gray-400 dark:bg-white/5 dark:text-gray-500 transition-all" disabled>
-                    <span class="material-symbols-outlined">square</span>
-                    <span class="truncate">Onda Quadrada</span>
-                </button>
-                
-                <button id="btnSine" onclick="setSineWave()" class="flex h-14 min-w-[84px] cursor-not-allowed items-center justify-center gap-2 overflow-hidden rounded-xl bg-gray-200 px-5 text-base font-bold leading-normal tracking-[0.015em] text-gray-400 dark:bg-white/5 dark:text-gray-500 transition-all" disabled>
-                    <span class="material-symbols-outlined">show_chart</span>
-                    <span class="truncate">Onda Senoidal</span>
-                </button>
-            </div>
+<body class="font-display bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-100 p-3 sm:p-6 flex flex-col items-center justify-center min-h-screen">
+    
+    <div class="w-full max-w-lg flex flex-col gap-4">
+        
+        <!-- Header & Card Principal -->
+        <div class="rounded-2xl bg-slate-800/90 border border-slate-700/60 p-5 shadow-2xl backdrop-blur-md">
             
-            <div class="px-4 py-2">
-                <label for="freqSlider" class="mb-2 block text-sm font-medium text-[#333333] dark:text-white">Frequência: <span id="freqValue">1.0</span> Hz</label>
-                <input id="freqSlider" type="range" min="0.1" max="5.0" step="0.1" value="1.0" class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 dark:bg-gray-700" oninput="updateFrequency(this.value)" disabled>
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-4 mb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span class="material-symbols-outlined text-indigo-400">memory</span>
+                        ESP32 LED Control
+                    </h1>
+                    <p class="text-xs text-slate-400">Controle 3 Canais (GPIO 25, 26, 27) via BLE</p>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700/80">
+                    <div id="connectionIndicator" class="size-2.5 rounded-full bg-red-500 animate-pulse"></div>
+                    <span id="statusText" class="text-xs font-medium text-slate-300">Desconectado</span>
+                </div>
             </div>
 
-            <div class="p-4 pt-2">
-                <p class="px-4 pb-3 pt-1 text-center text-sm font-normal leading-normal text-[#616189] dark:text-gray-400">Conecte-se ao dispositivo para habilitar os controles.</p>
-            </div>
-        </div>
-        
-        <div class="mt-4 w-full max-w-md rounded-xl bg-gray-900/80 p-4 shadow-lg backdrop-blur-sm dark:bg-black/50">
-            <div class="mb-2 flex items-center justify-between">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Osciloscópio (Simulação)</h3>
-                <span class="material-symbols-outlined text-xl text-teal-400">monitoring</span>
-            </div>
-            <div class="relative h-40 w-full overflow-hidden rounded-lg bg-black">
-                <div class="absolute inset-0 grid grid-cols-8 grid-rows-6">
-                    <div class="col-span-1 border-r border-teal-500/10"></div>
-                    <div class="col-span-1 border-r border-teal-500/10"></div>
-                    <div class="col-span-1 border-r border-teal-500/10"></div>
-                    <div class="col-span-1 border-r border-teal-500/20"></div>
-                    <div class="col-span-1 border-r border-teal-500/10"></div>
-                    <div class="col-span-1 border-r border-teal-500/10"></div>
-                    <div class="col-span-1 border-r border-teal-500/10"></div>
-                    <div class="col-span-1"></div>
-                    <div class="row-span-1 border-b border-teal-500/10"></div>
-                    <div class="row-span-1 border-b border-teal-500/10"></div>
-                    <div class="row-span-1 border-b border-teal-500/20"></div>
-                    <div class="row-span-1 border-b border-teal-500/10"></div>
-                    <div class="row-span-1 border-b border-teal-500/10"></div>
-                    <div class="row-span-1"></div>
+            <!-- Botão Conectar -->
+            <button id="btnConnect" onclick="connectBluetooth()" class="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+                <span id="statusIcon" class="material-symbols-outlined">bluetooth</span>
+                <span id="btnConnectLabel">Conectar Bluetooth</span>
+            </button>
+
+            <!-- Seção 1: Controle Individual dos LEDs -->
+            <div class="mt-5">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Controle Individual</span>
+                    <div class="flex gap-2">
+                        <button onclick="sendQuickCmd('ON')" class="text-xs px-2.5 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-emerald-400 font-semibold transition disabled:opacity-40" disabled id="btnAllOn">Ligar Todos</button>
+                        <button onclick="sendQuickCmd('OFF')" class="text-xs px-2.5 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-400 font-semibold transition disabled:opacity-40" disabled id="btnAllOff">Desligar</button>
+                    </div>
                 </div>
-                <canvas id="scopeCanvas" class="absolute inset-0 h-full w-full"></canvas>
+
+                <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                    <!-- LED 1 -->
+                    <button id="btnLed1" onclick="toggleLed(1)" class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 hover:border-cyan-500/50 transition-all cursor-not-allowed opacity-50" disabled>
+                        <span class="material-symbols-outlined text-3xl text-cyan-400 mb-1 transition-transform group-active:scale-95">lightbulb</span>
+                        <span class="text-xs font-bold text-slate-200">LED 1</span>
+                        <span class="text-[10px] text-slate-400">GPIO 25</span>
+                        <span id="badgeLed1" class="mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">OFF</span>
+                    </button>
+
+                    <!-- LED 2 -->
+                    <button id="btnLed2" onclick="toggleLed(2)" class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 hover:border-emerald-500/50 transition-all cursor-not-allowed opacity-50" disabled>
+                        <span class="material-symbols-outlined text-3xl text-emerald-400 mb-1 transition-transform group-active:scale-95">lightbulb</span>
+                        <span class="text-xs font-bold text-slate-200">LED 2</span>
+                        <span class="text-[10px] text-slate-400">GPIO 26</span>
+                        <span id="badgeLed2" class="mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">OFF</span>
+                    </button>
+
+                    <!-- LED 3 -->
+                    <button id="btnLed3" onclick="toggleLed(3)" class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 hover:border-fuchsia-500/50 transition-all cursor-not-allowed opacity-50" disabled>
+                        <span class="material-symbols-outlined text-3xl text-fuchsia-400 mb-1 transition-transform group-active:scale-95">lightbulb</span>
+                        <span class="text-xs font-bold text-slate-200">LED 3</span>
+                        <span class="text-[10px] text-slate-400">GPIO 27</span>
+                        <span id="badgeLed3" class="mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">OFF</span>
+                    </button>
+                </div>
             </div>
-            <div class="mt-3 flex justify-between text-xs text-gray-400">
-                <span>-100ms</span>
-                <span>0ms</span>
-                <span>+100ms</span>
+
+            <!-- Seção 2: Modos de Animação -->
+            <div class="mt-5">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Efeitos & Animações</span>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    
+                    <button id="modeSeq" onclick="setMode('M1', 'modeSeq')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-cyan-400 text-xl">sync_alt</span>
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 leading-tight">Sequencial</div>
+                            <div class="text-[10px] text-slate-400">Vai e Vem</div>
+                        </div>
+                    </button>
+
+                    <button id="modeSine" onclick="setMode('M2', 'modeSine')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-indigo-400 text-xl">air</span>
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 leading-tight">Respiração</div>
+                            <div class="text-[10px] text-slate-400">3 Fases Seno</div>
+                        </div>
+                    </button>
+
+                    <button id="modeAlt" onclick="setMode('M3', 'modeAlt')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-amber-400 text-xl">local_police</span>
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 leading-tight">Giroflex</div>
+                            <div class="text-[10px] text-slate-400">Alternado</div>
+                        </div>
+                    </button>
+
+                    <button id="modeStrobe" onclick="setMode('M4', 'modeStrobe')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-yellow-400 text-xl">bolt</span>
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 leading-tight">Strobo</div>
+                            <div class="text-[10px] text-slate-400">Flash rápido</div>
+                        </div>
+                    </button>
+
+                    <button id="modeFirefly" onclick="setMode('M5', 'modeFirefly')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed sm:col-span-2" disabled>
+                        <span class="material-symbols-outlined text-emerald-400 text-xl">auto_awesome</span>
+                        <div>
+                            <div class="text-xs font-bold text-slate-200 leading-tight">Vagalume</div>
+                            <div class="text-[10px] text-slate-400">Fade Aleatório Orgânico</div>
+                        </div>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Seção 3: Slider de Frequência / Velocidade -->
+            <div class="mt-5 bg-slate-900/40 p-3 rounded-xl border border-slate-700/40">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base text-indigo-400">speed</span>
+                        Velocidade da Animação
+                    </span>
+                    <span id="freqValue" class="text-xs font-bold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">1.0 Hz</span>
+                </div>
+                <input id="freqSlider" type="range" min="0.2" max="6.0" step="0.1" value="1.0" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 disabled:opacity-40" oninput="updateFrequency(this.value)" disabled>
+            </div>
+
+        </div>
+
+        <!-- Seção 4: Osciloscópio / Telemetria em Tempo Real -->
+        <div class="rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-2xl">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-indigo-400 text-base">ssid_chart</span>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Telemetria (Canais PWM)</h3>
+                </div>
+                <div class="flex items-center gap-3 text-[10px]">
+                    <span class="flex items-center gap-1 text-cyan-400"><span class="size-2 rounded-full bg-cyan-400"></span> CH1 (P25)</span>
+                    <span class="flex items-center gap-1 text-emerald-400"><span class="size-2 rounded-full bg-emerald-400"></span> CH2 (P26)</span>
+                    <span class="flex items-center gap-1 text-fuchsia-400"><span class="size-2 rounded-full bg-fuchsia-400"></span> CH3 (P27)</span>
+                </div>
+            </div>
+            
+            <div class="relative h-28 sm:h-32 w-full overflow-hidden rounded-xl bg-slate-950 border border-slate-800">
+                <canvas id="scopeCanvas" class="absolute inset-0 w-full h-full"></canvas>
             </div>
         </div>
+
     </div>
 
     <script>
-        // --- Lógica do Osciloscópio (Canvas) ---
+        // --- Osciloscópio Multicanal ---
         const canvas = document.getElementById('scopeCanvas');
         const ctx = canvas.getContext('2d');
-        let time = 0;
-
-        // Variáveis Globais
-        let bluetoothDevice;
-        let characteristic;
-        let isManualOn = false;
-        let currentMode = -1; // -1=none, 0=manual, 1=square, 2=sine
-        let dataBuffer = new Array(300).fill(128); // Buffer para dados reais
+        
+        let bufCh1 = new Array(200).fill(0);
+        let bufCh2 = new Array(200).fill(0);
+        let bufCh3 = new Array(200).fill(0);
 
         function resizeCanvas() {
-            const parent = canvas.parentElement;
-            canvas.width = parent.clientWidth;
-            canvas.height = parent.clientHeight;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        function animateScope() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#2dd4bf'; // teal-400
+        function drawTrace(buffer, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.8;
             ctx.shadowBlur = 4;
-            ctx.shadowColor = '#2dd4bf';
-            
+            ctx.shadowColor = color;
             ctx.beginPath();
 
-            const width = canvas.width;
-            const height = canvas.height;
-            const centerY = height / 2;
-            
-            // Se desconectado, desenha linha reta com ruído
-            if (!bluetoothDevice || !bluetoothDevice.gatt.connected) {
-                 time += 3;
-                 for (let x = 0; x < width; x++) {
-                    let y = centerY + (Math.random() - 0.5) * 2;
-                    if (x === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                 }
-            } else {
-                // Desenha dados reais do buffer
-                // Mapeia o buffer (0-255) para a altura do canvas
-                // O buffer tem 300 pontos, esticamos para a largura do canvas
-                const step = width / dataBuffer.length;
-                
-                for (let i = 0; i < dataBuffer.length; i++) {
-                    const val = dataBuffer[i];
-                    // Inverte Y porque canvas 0 é topo
-                    // 0 -> height (baixo), 255 -> 0 (topo)
-                    // Vamos usar margem de 10%
-                    const y = height - (val / 255.0) * (height * 0.8) - (height * 0.1);
-                    
-                    const x = i * step;
-                    
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
+            const w = canvas.width;
+            const h = canvas.height;
+            const step = w / buffer.length;
+
+            for (let i = 0; i < buffer.length; i++) {
+                const val = buffer[i];
+                const y = h - (val / 255.0) * (h * 0.8) - (h * 0.1);
+                const x = i * step;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
             }
-            
             ctx.stroke();
+        }
+
+        function animateScope() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Grade de fundo
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'rgba(51, 65, 85, 0.25)';
+            ctx.lineWidth = 1;
+            for (let y = 0; y < canvas.height; y += canvas.height / 4) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            drawTrace(bufCh1, '#22d3ee'); // Ciano (CH1)
+            drawTrace(bufCh2, '#34d399'); // Esmeralda (CH2)
+            drawTrace(bufCh3, '#e879f9'); // Fuchsia (CH3)
+
             requestAnimationFrame(animateScope);
         }
-        
-        // Inicia o loop de animação
         animateScope();
 
-        // --- Fim Lógica Osciloscópio ---
-
-        // Registra o Service Worker para funcionar como PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(reg => console.log('Service Worker registrado!', reg))
-                    .catch(err => console.log('Erro ao registrar SW:', err));
-            });
-        }
+        // --- Bluetooth BLE ---
+        let bluetoothDevice;
+        let characteristic;
+        let ledStates = [false, false, false];
 
         async function connectBluetooth() {
             try {
+                updateStatus('Buscando...', 'connecting');
                 bluetoothDevice = await navigator.bluetooth.requestDevice({
                     filters: [{ name: 'ESP32_LED_Control' }],
                     optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
                 });
 
                 updateStatus('Conectando...', 'connecting');
-
                 const server = await bluetoothDevice.gatt.connect();
                 const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
                 characteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
 
                 updateStatus('Conectado', 'connected');
-                enableButtons();
-                
-                // Habilita notificações
+                enableControls();
+
                 await characteristic.startNotifications();
                 characteristic.addEventListener('characteristicvaluechanged', handleNotifications);
-                
                 bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
 
-            } catch (error) {
-                console.error('Erro:', error);
-                updateStatus('Erro na conexão', 'error');
+            } catch (err) {
+                console.error(err);
+                updateStatus('Desconectado', 'disconnected');
             }
         }
 
         function onDisconnected() {
             updateStatus('Desconectado', 'disconnected');
-            disableButtons();
-            currentMode = -1;
-            updateModeVisuals();
-            // Limpa buffer
-            dataBuffer.fill(128);
+            disableControls();
+            bufCh1.fill(0);
+            bufCh2.fill(0);
+            bufCh3.fill(0);
         }
 
         function handleNotifications(event) {
-            const value = event.target.value;
-            const decoder = new TextDecoder('utf-8');
-            const str = decoder.decode(value);
-            
-            // Esperado: "V:128"
-            if (str.startsWith('V:')) {
-                const val = parseInt(str.substring(2));
-                if (!isNaN(val)) {
-                    // Adiciona ao buffer e remove o mais antigo
-                    dataBuffer.push(val);
-                    dataBuffer.shift();
+            const valStr = new TextDecoder('utf-8').decode(event.target.value);
+            // Formato esperado: "V:v1,v2,v3"
+            if (valStr.startsWith('V:')) {
+                const parts = valStr.substring(2).split(',');
+                if (parts.length >= 3) {
+                    const v1 = parseInt(parts[0]) || 0;
+                    const v2 = parseInt(parts[1]) || 0;
+                    const v3 = parseInt(parts[2]) || 0;
+
+                    bufCh1.push(v1); bufCh1.shift();
+                    bufCh2.push(v2); bufCh2.shift();
+                    bufCh3.push(v3); bufCh3.shift();
+
+                    updateLedVisuals(v1, v2, v3);
                 }
             }
         }
 
-        async function sendCommand(command) {
+        async function sendCmd(cmd) {
             if (characteristic) {
                 try {
-                    const encoder = new TextEncoder();
-                    await characteristic.writeValue(encoder.encode(command));
-                } catch (error) {
-                    console.error('Erro envio:', error);
+                    await characteristic.writeValue(new TextEncoder().encode(cmd));
+                } catch (e) {
+                    console.error('Erro ao enviar:', e);
                 }
             }
         }
 
-        async function toggleManual() {
-            await sendCommand('1');
-            isManualOn = !isManualOn;
-            currentMode = 0;
-            updateModeVisuals();
+        function toggleLed(num) {
+            sendCmd('L' + num);
+            resetActiveModes();
         }
 
-        async function setSquareWave() {
-            await sendCommand('2');
-            currentMode = 1;
-            updateModeVisuals();
+        function sendQuickCmd(cmd) {
+            sendCmd(cmd);
+            resetActiveModes();
         }
 
-        async function setSineWave() {
-            await sendCommand('3');
-            currentMode = 2;
-            updateModeVisuals();
+        function setMode(modeCmd, btnId) {
+            sendCmd(modeCmd);
+            resetActiveModes();
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.classList.add('border-indigo-500', 'bg-indigo-900/40');
+            }
         }
-        
-        let freqTimeout;
+
+        function resetActiveModes() {
+            document.querySelectorAll('.btn-mode').forEach(b => {
+                b.classList.remove('border-indigo-500', 'bg-indigo-900/40');
+            });
+        }
+
+        let freqDebounce;
         function updateFrequency(val) {
-            document.getElementById('freqValue').textContent = val;
-            
-            // Debounce para não enviar comandos demais
-            clearTimeout(freqTimeout);
-            freqTimeout = setTimeout(async () => {
-                await sendCommand('F' + val);
-            }, 200);
+            document.getElementById('freqValue').textContent = parseFloat(val).toFixed(1) + ' Hz';
+            clearTimeout(freqDebounce);
+            freqDebounce = setTimeout(() => {
+                sendCmd('F' + val);
+            }, 150);
+        }
+
+        function updateLedVisuals(v1, v2, v3) {
+            const setBadge = (id, badgeId, val, activeBorder) => {
+                const badge = document.getElementById(badgeId);
+                const btn = document.getElementById(id);
+                if (val > 20) {
+                    badge.textContent = 'ON';
+                    badge.className = 'mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                    btn.classList.add(activeBorder);
+                } else {
+                    badge.textContent = 'OFF';
+                    badge.className = 'mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400';
+                    btn.classList.remove(activeBorder);
+                }
+            };
+
+            setBadge('btnLed1', 'badgeLed1', v1, 'border-cyan-500');
+            setBadge('btnLed2', 'badgeLed2', v2, 'border-emerald-500');
+            setBadge('btnLed3', 'badgeLed3', v3, 'border-fuchsia-500');
         }
 
         function updateStatus(text, state) {
-            const statusText = document.getElementById('statusText');
-            const indicator = document.getElementById('connectionIndicator');
+            document.getElementById('statusText').textContent = text;
+            const ind = document.getElementById('connectionIndicator');
             const icon = document.getElementById('statusIcon');
-            
-            statusText.textContent = 'Status: ' + text;
-            
-            // Reset classes
-            indicator.className = 'size-3 rounded-full';
-            
+            const btnConnect = document.getElementById('btnConnect');
+            const btnLabel = document.getElementById('btnConnectLabel');
+
+            ind.className = 'size-2.5 rounded-full';
             if (state === 'connected') {
-                indicator.classList.add('bg-[#34C759]'); // Green
+                ind.classList.add('bg-emerald-500');
                 icon.textContent = 'bluetooth_connected';
+                btnLabel.textContent = 'Conectado com Sucesso';
+                btnConnect.className = 'w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 font-bold text-white shadow-lg shadow-emerald-600/30';
             } else if (state === 'connecting') {
-                indicator.classList.add('bg-yellow-400');
+                ind.classList.add('bg-amber-400', 'animate-pulse');
                 icon.textContent = 'bluetooth_searching';
             } else {
-                indicator.classList.add('bg-[#FF3B30]'); // Red
-                icon.textContent = 'bluetooth_disabled';
+                ind.classList.add('bg-red-500', 'animate-pulse');
+                icon.textContent = 'bluetooth';
+                btnLabel.textContent = 'Conectar Bluetooth';
+                btnConnect.className = 'w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-lg shadow-indigo-600/30 cursor-pointer';
             }
         }
 
-        function enableButtons() {
-            const buttons = ['btnManual', 'btnSquare', 'btnSine'];
-            buttons.forEach(id => {
-                const btn = document.getElementById(id);
-                btn.disabled = false;
-                btn.classList.remove('cursor-not-allowed', 'bg-gray-200', 'text-gray-400', 'dark:bg-white/5', 'dark:text-gray-500');
-                btn.classList.add('cursor-pointer', 'bg-white', 'text-gray-900', 'shadow-sm');
-            });
-            
-            const slider = document.getElementById('freqSlider');
-            slider.disabled = false;
-            slider.classList.remove('bg-gray-200', 'dark:bg-gray-700');
-            slider.classList.add('bg-blue-200', 'dark:bg-blue-900');
-            
-            const btnConnect = document.getElementById('btnConnect');
-            btnConnect.innerHTML = '<span class="material-symbols-outlined">check</span><span class="truncate">Conectado</span>';
-            btnConnect.classList.remove('bg-primary');
-            btnConnect.classList.add('bg-green-600');
-        }
-
-        function disableButtons() {
-            const buttons = ['btnManual', 'btnSquare', 'btnSine'];
-            buttons.forEach(id => {
-                const btn = document.getElementById(id);
-                btn.disabled = true;
-                btn.classList.add('cursor-not-allowed', 'bg-gray-200', 'text-gray-400', 'dark:bg-white/5', 'dark:text-gray-500');
-                btn.classList.remove('cursor-pointer', 'bg-white', 'text-gray-900', 'shadow-sm', 'bg-blue-600', 'text-white');
-            });
-            
-            const slider = document.getElementById('freqSlider');
-            slider.disabled = true;
-            slider.classList.add('bg-gray-200', 'dark:bg-gray-700');
-            slider.classList.remove('bg-blue-200', 'dark:bg-blue-900');
-            
-            const btnConnect = document.getElementById('btnConnect');
-            btnConnect.innerHTML = '<span class="material-symbols-outlined">bluetooth_drive</span><span class="truncate">Conectar Bluetooth</span>';
-            btnConnect.classList.add('bg-primary');
-            btnConnect.classList.remove('bg-green-600');
-        }
-
-        function updateModeVisuals() {
-            // Reseta todos os botões para o estado padrão (Cinza/Branco)
-            const buttons = ['btnManual', 'btnSquare', 'btnSine'];
-            buttons.forEach(id => {
-                const btn = document.getElementById(id);
-                // Remove estilos ativos
-                btn.classList.remove('bg-blue-600', 'text-white');
-                // Adiciona estilos inativos (padrão)
-                btn.classList.add('bg-white', 'text-gray-900');
-            });
-
-            // Função auxiliar para ativar botão
-            const activateBtn = (id) => {
-                const btn = document.getElementById(id);
-                btn.classList.remove('bg-white', 'text-gray-900');
-                btn.classList.add('bg-blue-600', 'text-white');
-            };
-
-            // Aplica estilo ativo baseado no modo atual
-            if (currentMode === 1) { // Onda Quadrada
-                activateBtn('btnSquare');
-            } else if (currentMode === 2) { // Onda Senoidal
-                activateBtn('btnSine');
-            } else if (currentMode === 0) { // Manual
-                // No modo manual, só fica azul se estiver ligado (isManualOn)
-                if (isManualOn) {
-                    activateBtn('btnManual');
+        function enableControls() {
+            const elements = ['btnLed1', 'btnLed2', 'btnLed3', 'btnAllOn', 'btnAllOff', 'modeSeq', 'modeSine', 'modeAlt', 'modeStrobe', 'modeFirefly', 'freqSlider'];
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.disabled = false;
+                    el.classList.remove('opacity-50', 'cursor-not-allowed');
+                    el.classList.add('cursor-pointer');
                 }
-            }
+            });
+        }
+
+        function disableControls() {
+            const elements = ['btnLed1', 'btnLed2', 'btnLed3', 'btnAllOn', 'btnAllOff', 'modeSeq', 'modeSine', 'modeAlt', 'modeStrobe', 'modeFirefly', 'freqSlider'];
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.disabled = true;
+                    el.classList.add('opacity-50', 'cursor-not-allowed');
+                    el.classList.remove('cursor-pointer');
+                }
+            });
+            resetActiveModes();
         }
     </script>
 </body>

@@ -1,82 +1,51 @@
-# Controle de LEDs via Bluetooth Low Energy (BLE)
+# Controle de 3 LEDs via Bluetooth Low Energy (BLE) - ESP32
 
 ## Descrição
-Este projeto usa **Bluetooth Low Energy (BLE)** para controlar LEDs. Isso permite que você controle o projeto tanto por **Aplicativos de Celular (Android/iOS)** quanto pela **Interface Web** no navegador.
+Projeto para controle individual e animações sincronizadas em **3 LEDs independentes** usando **Bluetooth Low Energy (BLE)** no ESP32. Permite controle tanto por aplicativos no celular (Android/iOS) quanto via navegador Web no Google Chrome / Edge com Web Bluetooth.
 
-## Configuração de Hardware
+---
 
-### Conexões dos LEDs:
-Todos os 3 LEDs devem ser conectados em paralelo no **GPIO 25**.
+## 🔌 Esquema de Ligação de Hardware
 
-**Montagem:**
-1. **LED 1 (Controle):** Resistor 1kΩ + LED (sem capacitor)
-2. **LED 2 (Médio):** Resistor 1kΩ + LED + Capacitor 800µF
-3. **LED 3 (Lento):** Resistor 1kΩ + LED + Capacitor 2200µF
+Cada LED deve ser conectado a um pino GPIO próprio com seu respectivo resistor (recomendado **330 Ω**):
 
-**Esquema de Ligação:**
-```
-GPIO 25 ──┬──[Resistor 1k]──[LED]── GND
-          │
-          ├──[Resistor 1k]──[LED]── GND
-          │                 │
-          │             [Capacitor 800µF]
-          │                 │
-          │                GND
-          │
-          └──[Resistor 1k]──[LED]── GND
-                            │
-                        [Capacitor 2200µF]
-                            │
-                           GND
+- **LED 1:** `GPIO 25` ───[ Resistor 330Ω ]───( + Ânodo ) LED 1 ( - Cátodo )─── `GND`
+- **LED 2:** `GPIO 26` ───[ Resistor 330Ω ]───( + Ânodo ) LED 2 ( - Cátodo )─── `GND`
+- **LED 3:** `GPIO 27` ───[ Resistor 330Ω ]───( + Ânodo ) LED 3 ( - Cátodo )─── `GND`
+
+```text
+ESP32 [ GPIO 25 ] ───[ Resistor 330Ω ]───( + ) LED 1 ( - )───┐
+ESP32 [ GPIO 26 ] ───[ Resistor 330Ω ]───( + ) LED 2 ( - )───┼── ESP32 [ GND ]
+ESP32 [ GPIO 27 ] ───[ Resistor 330Ω ]───( + ) LED 3 ( - )───┘
 ```
 
-## Como Usar (Celular)
+---
 
-O BLE funciona de forma diferente do Bluetooth clássico. **Não pareie nas configurações do Android/iOS.** Conecte diretamente dentro do aplicativo.
+## 📱 Como Usar no Celular
 
-### 1. Aplicativos Recomendados (Fáceis de usar)
+O BLE funciona de forma diferente do Bluetooth clássico (não pareie pelas configurações do sistema). Conecte direto pelo app ou navegador:
 
-**📱 Android:**
-- **Serial Bluetooth Terminal** (de Kai Morich) - *Recomendado*
-  1. Abra o app
-  2. Vá no menu ☰ -> **Devices**
-  3. Mude a aba para **Bluetooth LE**
-  4. Clique em **Scan** e conecte em `ESP32_LED_Control`
+### Opção 1: Pela Interface Web (Recomendado)
+1. Abra o arquivo `index.html` no Google Chrome ou Microsoft Edge (PC ou Android).
+2. Clique em **"Conectar Bluetooth"** e selecione `ESP32_LED_Control`.
+3. Tenha o painel completo com botões individuais, efeitos visuais, slider de velocidade e osciloscópio multicanal em tempo real.
 
-**📱 iOS (iPhone):**
-- **BLE Terminal HM-10**
-- **LightBlue**
+### Opção 2: Pelo App Serial Bluetooth Terminal (Android / iOS)
+1. Abra o app **Serial Bluetooth Terminal** (ou **BLE Terminal HM-10** no iOS).
+2. Mude a aba para **Bluetooth LE**, faça o scan e conecte em `ESP32_LED_Control`.
+3. Envie os comandos abaixo:
 
-### 2. Configurando Botões no App (Opcional)
-Para facilitar, você pode configurar botões no app "Serial Bluetooth Terminal":
-1. Segure um dos botões na parte inferior (M1, M2...)
-2. Nome: `Manual` | Valor: `1`
-3. Nome: `Quadrada` | Valor: `2`
-4. Nome: `Senoidal` | Valor: `3`
+| Comando | Ação |
+|---|---|
+| `1` ou `L1` | Alterna LED 1 (GPIO 25) ON/OFF |
+| `2` ou `L2` | Alterna LED 2 (GPIO 26) ON/OFF |
+| `3` ou `L3` | Alterna LED 3 (GPIO 27) ON/OFF |
+| `ON` ou `9` | Liga todos os 3 LEDs |
+| `OFF` ou `0` | Desliga todos os LEDs |
+| `4` ou `M1` | **Modo Sequencial (Vai e Vem / Knight Rider)** |
+| `5` ou `M2` | **Modo Respiração 3 Fases (Senoide desfasada em 120°)** |
+| `6` ou `M3` | **Modo Giroflex / Alternado (1+3 vs 2)** |
+| `7` ou `M4` | **Modo Strobo (Flash rápido)** |
+| `8` ou `M5` | **Modo Vagalume (Fade aleatório suave)** |
+| `F1.5` | Ajusta a frequência/velocidade para 1.5 Hz (ex: `F0.5`, `F3.0`) |
 
-## Como Usar (Interface Web)
-
-1. Abra o navegador **Google Chrome** (Android ou PC)
-2. Certifique-se que o Bluetooth do dispositivo está ligado
-3. Abra o arquivo `web_interface.html`
-4. Clique em **Conectar Bluetooth**
-5. Selecione `ESP32_LED_Control` na lista
-
-## Comandos
-
-| Comando | Função |
-|---------|--------|
-| `1` | Liga/Desliga manualmente (Modo Digital) |
-| `2` | Ativa Onda Quadrada (Teste de Carga/Descarga) |
-| `3` | Ativa Onda Senoidal (Teste de Filtro Suave) |
-
-## Troubleshooting
-
-### O dispositivo não aparece no scan:
-- Certifique-se de estar procurando na aba **Bluetooth LE** (não Classic)
-- Ative a Localização (GPS) do celular (necessário para scan BLE no Android)
-- Reinicie o ESP32
-
-### Erro de conexão na Web:
-- A interface web funciona apenas em navegadores baseados no Chromium (Chrome, Edge, Opera)
-- No iPhone, o Chrome não suporta Web Bluetooth (limitação da Apple). Use o app **Bluefy** ou um app nativo listado acima.
