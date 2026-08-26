@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ESP32 - Controle de 3 LEDs BLE</title>
+    <title>ESP32 - Semáforo & Efeitos BLE</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="theme-color" content="#0f172a">
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -14,11 +14,6 @@
           darkMode: "class",
           theme: {
             extend: {
-              colors: {
-                "primary": "#4f46e5",
-                "background-light": "#f8fafc",
-                "background-dark": "#0f172a",
-              },
               fontFamily: {
                 "display": ["Space Grotesk", "sans-serif"]
               }
@@ -30,152 +25,222 @@
         .material-symbols-outlined {
           font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
-        body {
-          min-height: 100dvh;
-        }
+        body { min-height: 100dvh; }
+        .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+        .glow-yellow { box-shadow: 0 0 20px rgba(234, 179, 8, 0.4); }
+        .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
     </style>
 </head>
-<body class="font-display bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-100 p-3 sm:p-6 flex flex-col items-center justify-center min-h-screen">
+<body class="font-display bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 p-3 sm:p-6 flex flex-col items-center justify-center min-h-screen">
     
-    <div class="w-full max-w-lg flex flex-col gap-4">
+    <div class="w-full max-w-lg flex flex-col gap-4 pb-6">
         
         <!-- Header & Card Principal -->
-        <div class="rounded-2xl bg-slate-800/90 border border-slate-700/60 p-5 shadow-2xl backdrop-blur-md">
+        <div class="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 shadow-2xl backdrop-blur-xl">
             
-            <div class="flex items-center justify-between border-b border-slate-700/60 pb-4 mb-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div>
                     <h1 class="text-xl font-bold text-white flex items-center gap-2">
-                        <span class="material-symbols-outlined text-indigo-400">memory</span>
-                        ESP32 LED Control
+                        <span class="material-symbols-outlined text-amber-400">traffic</span>
+                        ESP32 Light Lab
                     </h1>
-                    <p class="text-xs text-slate-400">Controle 3 Canais (GPIO 25, 26, 27) via BLE</p>
+                    <p class="text-xs text-slate-400">🔴 Vermelho (D25) • 🟡 Amarelo (D26) • 🟢 Verde (D27)</p>
                 </div>
-                <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700/80">
+                <div class="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-full border border-slate-800">
                     <div id="connectionIndicator" class="size-2.5 rounded-full bg-red-500 animate-pulse"></div>
                     <span id="statusText" class="text-xs font-medium text-slate-300">Desconectado</span>
                 </div>
             </div>
 
-            <!-- Botão Conectar -->
-            <button id="btnConnect" onclick="connectBluetooth()" class="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+            <!-- Botão Conectar Bluetooth -->
+            <button id="btnConnect" onclick="connectBluetooth()" class="w-full h-12 flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
                 <span id="statusIcon" class="material-symbols-outlined">bluetooth</span>
-                <span id="btnConnectLabel">Conectar Bluetooth</span>
+                <span id="btnConnectLabel">Conectar ao ESP32</span>
             </button>
 
-            <!-- Seção 1: Controle Individual dos LEDs -->
+            <!-- 1. Controle Manual dos LEDs com Cores Reais -->
             <div class="mt-5">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Controle Individual</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Controle Manual</span>
                     <div class="flex gap-2">
-                        <button onclick="sendQuickCmd('ON')" class="text-xs px-2.5 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-emerald-400 font-semibold transition disabled:opacity-40" disabled id="btnAllOn">Ligar Todos</button>
-                        <button onclick="sendQuickCmd('OFF')" class="text-xs px-2.5 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-400 font-semibold transition disabled:opacity-40" disabled id="btnAllOff">Desligar</button>
+                        <button onclick="sendQuickCmd('ON')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold transition disabled:opacity-40" disabled id="btnAllOn">Ligar Todos</button>
+                        <button onclick="sendQuickCmd('OFF')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold transition disabled:opacity-40" disabled id="btnAllOff">Desligar</button>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 sm:gap-3">
-                    <!-- LED 1 -->
-                    <button id="btnLed1" onclick="toggleLed(1)" class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 hover:border-cyan-500/50 transition-all cursor-not-allowed opacity-50" disabled>
-                        <span class="material-symbols-outlined text-3xl text-cyan-400 mb-1 transition-transform group-active:scale-95">lightbulb</span>
-                        <span class="text-xs font-bold text-slate-200">LED 1</span>
-                        <span class="text-[10px] text-slate-400">GPIO 25</span>
-                        <span id="badgeLed1" class="mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">OFF</span>
+                <div class="grid grid-cols-3 gap-2.5">
+                    <!-- LED Vermelho (D25) -->
+                    <button id="btnLedRed" onclick="toggleLed('RED')" class="group flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-red-500/60 transition-all cursor-not-allowed opacity-50" disabled>
+                        <div id="bulbRed" class="size-10 rounded-full flex items-center justify-center bg-red-950/60 text-red-500 border border-red-900/50 mb-1.5 transition-all">
+                            <span class="material-symbols-outlined text-2xl">circle</span>
+                        </div>
+                        <span class="text-xs font-bold text-red-400">Vermelho</span>
+                        <span class="text-[10px] text-slate-400">D25</span>
+                        <span id="badgeRed" class="mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-900 text-slate-400">OFF</span>
                     </button>
 
-                    <!-- LED 2 -->
-                    <button id="btnLed2" onclick="toggleLed(2)" class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 hover:border-emerald-500/50 transition-all cursor-not-allowed opacity-50" disabled>
-                        <span class="material-symbols-outlined text-3xl text-emerald-400 mb-1 transition-transform group-active:scale-95">lightbulb</span>
-                        <span class="text-xs font-bold text-slate-200">LED 2</span>
-                        <span class="text-[10px] text-slate-400">GPIO 26</span>
-                        <span id="badgeLed2" class="mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">OFF</span>
+                    <!-- LED Amarelo (D26) -->
+                    <button id="btnLedYellow" onclick="toggleLed('YELLOW')" class="group flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-yellow-500/60 transition-all cursor-not-allowed opacity-50" disabled>
+                        <div id="bulbYellow" class="size-10 rounded-full flex items-center justify-center bg-yellow-950/60 text-yellow-500 border border-yellow-900/50 mb-1.5 transition-all">
+                            <span class="material-symbols-outlined text-2xl">circle</span>
+                        </div>
+                        <span class="text-xs font-bold text-yellow-400">Amarelo</span>
+                        <span class="text-[10px] text-slate-400">D26</span>
+                        <span id="badgeYellow" class="mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-900 text-slate-400">OFF</span>
                     </button>
 
-                    <!-- LED 3 -->
-                    <button id="btnLed3" onclick="toggleLed(3)" class="group flex flex-col items-center justify-center p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 hover:border-fuchsia-500/50 transition-all cursor-not-allowed opacity-50" disabled>
-                        <span class="material-symbols-outlined text-3xl text-fuchsia-400 mb-1 transition-transform group-active:scale-95">lightbulb</span>
-                        <span class="text-xs font-bold text-slate-200">LED 3</span>
-                        <span class="text-[10px] text-slate-400">GPIO 27</span>
-                        <span id="badgeLed3" class="mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">OFF</span>
+                    <!-- LED Verde (D27) -->
+                    <button id="btnLedGreen" onclick="toggleLed('GREEN')" class="group flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/60 transition-all cursor-not-allowed opacity-50" disabled>
+                        <div id="bulbGreen" class="size-10 rounded-full flex items-center justify-center bg-emerald-950/60 text-emerald-500 border border-emerald-900/50 mb-1.5 transition-all">
+                            <span class="material-symbols-outlined text-2xl">circle</span>
+                        </div>
+                        <span class="text-xs font-bold text-emerald-400">Verde</span>
+                        <span class="text-[10px] text-slate-400">D27</span>
+                        <span id="badgeGreen" class="mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-900 text-slate-400">OFF</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Seção 2: Modos de Animação -->
+            <!-- 2. Efeitos Temáticos: Semáforo & Trânsito -->
             <div class="mt-5">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Efeitos & Animações</span>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1 mb-2">
+                    <span class="material-symbols-outlined text-sm">traffic</span>
+                    Semáforo & Trânsito
+                </span>
+                <div class="grid grid-cols-3 gap-2">
                     
-                    <button id="modeSeq" onclick="setMode('M1', 'modeSeq')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
-                        <span class="material-symbols-outlined text-cyan-400 text-xl">sync_alt</span>
-                        <div>
-                            <div class="text-xs font-bold text-slate-200 leading-tight">Sequencial</div>
-                            <div class="text-[10px] text-slate-400">Vai e Vem</div>
-                        </div>
+                    <button id="modeTraffic" onclick="setMode('TRAFFIC', 'modeTraffic')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-emerald-400 text-xl mb-0.5">traffic</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Semáforo</div>
+                        <div class="text-[10px] text-slate-400">Automático</div>
                     </button>
 
-                    <button id="modeSine" onclick="setMode('M2', 'modeSine')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
-                        <span class="material-symbols-outlined text-indigo-400 text-xl">air</span>
-                        <div>
-                            <div class="text-xs font-bold text-slate-200 leading-tight">Respiração</div>
-                            <div class="text-[10px] text-slate-400">3 Fases Seno</div>
-                        </div>
+                    <button id="modeAlert" onclick="setMode('ALERT', 'modeAlert')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-yellow-400 text-xl mb-0.5">warning</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Alerta</div>
+                        <div class="text-[10px] text-slate-400">Amarelo Pisca</div>
                     </button>
 
-                    <button id="modeAlt" onclick="setMode('M3', 'modeAlt')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
-                        <span class="material-symbols-outlined text-amber-400 text-xl">local_police</span>
-                        <div>
-                            <div class="text-xs font-bold text-slate-200 leading-tight">Giroflex</div>
-                            <div class="text-[10px] text-slate-400">Alternado</div>
-                        </div>
-                    </button>
-
-                    <button id="modeStrobe" onclick="setMode('M4', 'modeStrobe')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
-                        <span class="material-symbols-outlined text-yellow-400 text-xl">bolt</span>
-                        <div>
-                            <div class="text-xs font-bold text-slate-200 leading-tight">Strobo</div>
-                            <div class="text-[10px] text-slate-400">Flash rápido</div>
-                        </div>
-                    </button>
-
-                    <button id="modeFirefly" onclick="setMode('M5', 'modeFirefly')" class="btn-mode flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 text-left transition disabled:opacity-40 cursor-not-allowed sm:col-span-2" disabled>
-                        <span class="material-symbols-outlined text-emerald-400 text-xl">auto_awesome</span>
-                        <div>
-                            <div class="text-xs font-bold text-slate-200 leading-tight">Vagalume</div>
-                            <div class="text-[10px] text-slate-400">Fade Aleatório Orgânico</div>
-                        </div>
+                    <button id="modeF1" onclick="setMode('F1', 'modeF1')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-red-400 text-xl mb-0.5">sports_score</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Largada F1</div>
+                        <div class="text-[10px] text-slate-400">Luzes & GO!</div>
                     </button>
 
                 </div>
             </div>
 
-            <!-- Seção 3: Slider de Frequência / Velocidade -->
-            <div class="mt-5 bg-slate-900/40 p-3 rounded-xl border border-slate-700/40">
-                <div class="flex justify-between items-center mb-1.5">
-                    <span class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-base text-indigo-400">speed</span>
-                        Velocidade da Animação
-                    </span>
-                    <span id="freqValue" class="text-xs font-bold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">1.0 Hz</span>
+            <!-- 3. Efeitos Atmosféricos & Especiais -->
+            <div class="mt-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1 mb-2">
+                    <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                    Efeitos & Atmosfera
+                </span>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    
+                    <button id="modeCandle" onclick="setMode('CANDLE', 'modeCandle')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-amber-500 text-xl mb-0.5">local_fire_department</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Vela / Fogo</div>
+                        <div class="text-[10px] text-slate-400">Tremeluzente</div>
+                    </button>
+
+                    <button id="modeHeart" onclick="setMode('HEART', 'modeHeart')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-rose-500 text-xl mb-0.5">favorite</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Coração</div>
+                        <div class="text-[10px] text-slate-400">Pulso Duplo</div>
+                    </button>
+
+                    <button id="modeVU" onclick="setMode('VU', 'modeVU')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-emerald-400 text-xl mb-0.5">equalizer</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">VU Meter</div>
+                        <div class="text-[10px] text-slate-400">Barra Som</div>
+                    </button>
+
+                    <button id="modeFirefly" onclick="setMode('FIREFLY', 'modeFirefly')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-cyan-400 text-xl mb-0.5">flare</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Vagalume</div>
+                        <div class="text-[10px] text-slate-400">Fade Suave</div>
+                    </button>
+
                 </div>
-                <input id="freqSlider" type="range" min="0.2" max="6.0" step="0.1" value="1.0" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 disabled:opacity-40" oninput="updateFrequency(this.value)" disabled>
+            </div>
+
+            <!-- 4. Dinâmicos & Balada -->
+            <div class="mt-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Dinâmicos & Balada</span>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    
+                    <button id="modeSeq" onclick="setMode('SEQ', 'modeSeq')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-cyan-400 text-xl mb-0.5">sync_alt</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Vai e Vem</div>
+                        <div class="text-[10px] text-slate-400">Knight Rider</div>
+                    </button>
+
+                    <button id="modeSine" onclick="setMode('SINE', 'modeSine')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-indigo-400 text-xl mb-0.5">air</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Respiração</div>
+                        <div class="text-[10px] text-slate-400">Seno 3 Fases</div>
+                    </button>
+
+                    <button id="modePolice" onclick="setMode('POLICE', 'modePolice')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-rose-400 text-xl mb-0.5">local_police</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Sirene</div>
+                        <div class="text-[10px] text-slate-400">Giroflex</div>
+                    </button>
+
+                    <button id="modeStrobe" onclick="setMode('STROBE', 'modeStrobe')" class="btn-mode flex flex-col p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-left transition disabled:opacity-40 cursor-not-allowed" disabled>
+                        <span class="material-symbols-outlined text-yellow-300 text-xl mb-0.5">bolt</span>
+                        <div class="text-xs font-bold text-slate-200 leading-tight">Strobo</div>
+                        <div class="text-[10px] text-slate-400">Flash Rápido</div>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- 5. Controles Deslizantes (Dimmer & Velocidade) -->
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800">
+                <!-- Dimmer de Brilho -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-medium text-slate-300 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm text-yellow-400">brightness_6</span>
+                            Brilho Geral
+                        </span>
+                        <span id="brightValue" class="text-xs font-bold text-yellow-400">100%</span>
+                    </div>
+                    <input id="brightSlider" type="range" min="5" max="100" step="5" value="100" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-yellow-400 disabled:opacity-40" oninput="updateBrightness(this.value)" disabled>
+                </div>
+
+                <!-- Velocidade / Frequência -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-medium text-slate-300 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm text-indigo-400">speed</span>
+                            Velocidade
+                        </span>
+                        <span id="freqValue" class="text-xs font-bold text-indigo-400">1.0 Hz</span>
+                    </div>
+                    <input id="freqSlider" type="range" min="0.2" max="6.0" step="0.1" value="1.0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 disabled:opacity-40" oninput="updateFrequency(this.value)" disabled>
+                </div>
             </div>
 
         </div>
 
-        <!-- Seção 4: Osciloscópio / Telemetria em Tempo Real -->
-        <div class="rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-2xl">
+        <!-- 6. Osciloscópio / Telemetria em Tempo Real (Cores Reais) -->
+        <div class="rounded-3xl bg-slate-900/90 border border-slate-800 p-4 shadow-2xl">
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-indigo-400 text-base">ssid_chart</span>
                     <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Telemetria (Canais PWM)</h3>
                 </div>
                 <div class="flex items-center gap-3 text-[10px]">
-                    <span class="flex items-center gap-1 text-cyan-400"><span class="size-2 rounded-full bg-cyan-400"></span> CH1 (P25)</span>
-                    <span class="flex items-center gap-1 text-emerald-400"><span class="size-2 rounded-full bg-emerald-400"></span> CH2 (P26)</span>
-                    <span class="flex items-center gap-1 text-fuchsia-400"><span class="size-2 rounded-full bg-fuchsia-400"></span> CH3 (P27)</span>
+                    <span class="flex items-center gap-1 text-red-400"><span class="size-2 rounded-full bg-red-500"></span> Vermelho (D25)</span>
+                    <span class="flex items-center gap-1 text-yellow-400"><span class="size-2 rounded-full bg-yellow-400"></span> Amarelo (D26)</span>
+                    <span class="flex items-center gap-1 text-emerald-400"><span class="size-2 rounded-full bg-emerald-400"></span> Verde (D27)</span>
                 </div>
             </div>
             
-            <div class="relative h-28 sm:h-32 w-full overflow-hidden rounded-xl bg-slate-950 border border-slate-800">
+            <div class="relative h-28 sm:h-32 w-full overflow-hidden rounded-2xl bg-slate-950 border border-slate-800">
                 <canvas id="scopeCanvas" class="absolute inset-0 w-full h-full"></canvas>
             </div>
         </div>
@@ -187,9 +252,9 @@
         const canvas = document.getElementById('scopeCanvas');
         const ctx = canvas.getContext('2d');
         
-        let bufCh1 = new Array(200).fill(0);
-        let bufCh2 = new Array(200).fill(0);
-        let bufCh3 = new Array(200).fill(0);
+        let bufRed = new Array(200).fill(0);
+        let bufYellow = new Array(200).fill(0);
+        let bufGreen = new Array(200).fill(0);
 
         function resizeCanvas() {
             canvas.width = canvas.parentElement.clientWidth;
@@ -233,9 +298,9 @@
                 ctx.stroke();
             }
 
-            drawTrace(bufCh1, '#22d3ee'); // Ciano (CH1)
-            drawTrace(bufCh2, '#34d399'); // Esmeralda (CH2)
-            drawTrace(bufCh3, '#e879f9'); // Fuchsia (CH3)
+            drawTrace(bufRed, '#ef4444');    // Vermelho (D25)
+            drawTrace(bufYellow, '#eab308'); // Amarelo (D26)
+            drawTrace(bufGreen, '#22c55e');  // Verde (D27)
 
             requestAnimationFrame(animateScope);
         }
@@ -244,7 +309,6 @@
         // --- Bluetooth BLE ---
         let bluetoothDevice;
         let characteristic;
-        let ledStates = [false, false, false];
 
         async function connectBluetooth() {
             try {
@@ -275,26 +339,26 @@
         function onDisconnected() {
             updateStatus('Desconectado', 'disconnected');
             disableControls();
-            bufCh1.fill(0);
-            bufCh2.fill(0);
-            bufCh3.fill(0);
+            bufRed.fill(0);
+            bufYellow.fill(0);
+            bufGreen.fill(0);
         }
 
         function handleNotifications(event) {
             const valStr = new TextDecoder('utf-8').decode(event.target.value);
-            // Formato esperado: "V:v1,v2,v3"
+            // Formato: "V:Red,Yellow,Green"
             if (valStr.startsWith('V:')) {
                 const parts = valStr.substring(2).split(',');
                 if (parts.length >= 3) {
-                    const v1 = parseInt(parts[0]) || 0;
-                    const v2 = parseInt(parts[1]) || 0;
-                    const v3 = parseInt(parts[2]) || 0;
+                    const r = parseInt(parts[0]) || 0;
+                    const y = parseInt(parts[1]) || 0;
+                    const g = parseInt(parts[2]) || 0;
 
-                    bufCh1.push(v1); bufCh1.shift();
-                    bufCh2.push(v2); bufCh2.shift();
-                    bufCh3.push(v3); bufCh3.shift();
+                    bufRed.push(r); bufRed.shift();
+                    bufYellow.push(y); bufYellow.shift();
+                    bufGreen.push(g); bufGreen.shift();
 
-                    updateLedVisuals(v1, v2, v3);
+                    updateLedVisuals(r, y, g);
                 }
             }
         }
@@ -309,8 +373,8 @@
             }
         }
 
-        function toggleLed(num) {
-            sendCmd('L' + num);
+        function toggleLed(color) {
+            sendCmd(color);
             resetActiveModes();
         }
 
@@ -324,14 +388,23 @@
             resetActiveModes();
             const btn = document.getElementById(btnId);
             if (btn) {
-                btn.classList.add('border-indigo-500', 'bg-indigo-900/40');
+                btn.classList.add('border-indigo-500', 'bg-indigo-900/50');
             }
         }
 
         function resetActiveModes() {
             document.querySelectorAll('.btn-mode').forEach(b => {
-                b.classList.remove('border-indigo-500', 'bg-indigo-900/40');
+                b.classList.remove('border-indigo-500', 'bg-indigo-900/50');
             });
+        }
+
+        let brightDebounce;
+        function updateBrightness(val) {
+            document.getElementById('brightValue').textContent = val + '%';
+            clearTimeout(brightDebounce);
+            brightDebounce = setTimeout(() => {
+                sendCmd('B' + val);
+            }, 100);
         }
 
         let freqDebounce;
@@ -343,24 +416,27 @@
             }, 150);
         }
 
-        function updateLedVisuals(v1, v2, v3) {
-            const setBadge = (id, badgeId, val, activeBorder) => {
+        function updateLedVisuals(r, y, g) {
+            const updateBulb = (bulbId, badgeId, btnId, val, activeBg, activeGlow, activeBorder) => {
+                const bulb = document.getElementById(bulbId);
                 const badge = document.getElementById(badgeId);
-                const btn = document.getElementById(id);
-                if (val > 20) {
-                    badge.textContent = 'ON';
-                    badge.className = 'mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                const btn = document.getElementById(btnId);
+                if (val > 25) {
+                    bulb.className = 'size-10 rounded-full flex items-center justify-center ' + activeBg + ' ' + activeGlow + ' text-white mb-1.5 transition-all';
+                    badge.textContent = 'ON (' + Math.round((val/255)*100) + '%)';
+                    badge.className = 'mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
                     btn.classList.add(activeBorder);
                 } else {
+                    bulb.className = 'size-10 rounded-full flex items-center justify-center bg-slate-900/80 text-slate-600 border border-slate-800 mb-1.5 transition-all';
                     badge.textContent = 'OFF';
-                    badge.className = 'mt-1.5 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400';
+                    badge.className = 'mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-900 text-slate-400';
                     btn.classList.remove(activeBorder);
                 }
             };
 
-            setBadge('btnLed1', 'badgeLed1', v1, 'border-cyan-500');
-            setBadge('btnLed2', 'badgeLed2', v2, 'border-emerald-500');
-            setBadge('btnLed3', 'badgeLed3', v3, 'border-fuchsia-500');
+            updateBulb('bulbRed', 'badgeRed', 'btnLedRed', r, 'bg-red-600', 'glow-red', 'border-red-500/80');
+            updateBulb('bulbYellow', 'badgeYellow', 'btnLedYellow', y, 'bg-yellow-500', 'glow-yellow', 'border-yellow-500/80');
+            updateBulb('bulbGreen', 'badgeGreen', 'btnLedGreen', g, 'bg-emerald-500', 'glow-green', 'border-emerald-500/80');
         }
 
         function updateStatus(text, state) {
@@ -374,22 +450,24 @@
             if (state === 'connected') {
                 ind.classList.add('bg-emerald-500');
                 icon.textContent = 'bluetooth_connected';
-                btnLabel.textContent = 'Conectado com Sucesso';
-                btnConnect.className = 'w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 font-bold text-white shadow-lg shadow-emerald-600/30';
+                btnLabel.textContent = 'Conectado ao ESP32';
+                btnConnect.className = 'w-full h-12 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 font-bold text-white shadow-lg shadow-emerald-600/30';
             } else if (state === 'connecting') {
                 ind.classList.add('bg-amber-400', 'animate-pulse');
                 icon.textContent = 'bluetooth_searching';
             } else {
                 ind.classList.add('bg-red-500', 'animate-pulse');
                 icon.textContent = 'bluetooth';
-                btnLabel.textContent = 'Conectar Bluetooth';
-                btnConnect.className = 'w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-lg shadow-indigo-600/30 cursor-pointer';
+                btnLabel.textContent = 'Conectar ao ESP32';
+                btnConnect.className = 'w-full h-12 flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-lg shadow-indigo-600/30 cursor-pointer';
             }
         }
 
         function enableControls() {
-            const elements = ['btnLed1', 'btnLed2', 'btnLed3', 'btnAllOn', 'btnAllOff', 'modeSeq', 'modeSine', 'modeAlt', 'modeStrobe', 'modeFirefly', 'freqSlider'];
-            elements.forEach(id => {
+            const btnIds = ['btnLedRed', 'btnLedYellow', 'btnLedGreen', 'btnAllOn', 'btnAllOff', 
+                            'modeTraffic', 'modeAlert', 'modeF1', 'modeCandle', 'modeHeart', 'modeVU', 'modeFirefly',
+                            'modeSeq', 'modeSine', 'modePolice', 'modeStrobe', 'brightSlider', 'freqSlider'];
+            btnIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.disabled = false;
@@ -400,8 +478,10 @@
         }
 
         function disableControls() {
-            const elements = ['btnLed1', 'btnLed2', 'btnLed3', 'btnAllOn', 'btnAllOff', 'modeSeq', 'modeSine', 'modeAlt', 'modeStrobe', 'modeFirefly', 'freqSlider'];
-            elements.forEach(id => {
+            const btnIds = ['btnLedRed', 'btnLedYellow', 'btnLedGreen', 'btnAllOn', 'btnAllOff', 
+                            'modeTraffic', 'modeAlert', 'modeF1', 'modeCandle', 'modeHeart', 'modeVU', 'modeFirefly',
+                            'modeSeq', 'modeSine', 'modePolice', 'modeStrobe', 'brightSlider', 'freqSlider'];
+            btnIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.disabled = true;
